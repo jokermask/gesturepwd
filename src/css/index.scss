@@ -1,0 +1,15 @@
+
+.wrapper-layer{
+  height: 100%;
+  width: 100%;
+  background-color: black;
+  position: relative;
+}
+
+#canvas{
+  position: absolute;
+  left: 50% ;
+  top: 50% ;
+  margin-left: -7.5rem;
+  margin-top: -7.5rem;
+}
