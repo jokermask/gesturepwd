@@ -27,17 +27,23 @@ webpackJsonp([0,1],[
 	  var buttonList = [];
 	  var pwd_stack = [];
 	  var lastButton = null;
+	  var pwd = "";
 	  (0, _webpackZepto2.default)(window).resize(resizeCanvas);
 
 	  function resizeCanvas() {
 	    var rem = parseInt(window.getComputedStyle(document.documentElement)["fontSize"]);
 	    var canvas_width = 15 * rem;
 	    var canvas_height = 15 * rem;
+	    buttonList = [];
+	    pwd_stack = [];
+	    lastButton = null;
+	    pwd = "";
 	    canvas.attr("width", canvas_width);
 	    canvas.attr("height", canvas_height);
 	    context.fillStyle = 'gray';
 	    context.roundRect(0, 0, canvas.width(), canvas.height(), 8);
 	    context.drawRoundButtons(rem);
+	    alert("enter the code");
 	  };
 	  //add roundRect function to draw roundRect
 	  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -64,8 +70,8 @@ webpackJsonp([0,1],[
 	    for (var i = 0; i < 3; i++) {
 	      for (var j = 0; j < 3; j++) {
 	        //one circle get 5rem box, radius is 4rem,0.5rem padding each side
-	        var x = 2.5 * rem + i * 5 * rem;
-	        var y = 2.5 * rem + j * 5 * rem;
+	        var x = 2.5 * rem + j * 5 * rem;
+	        var y = 2.5 * rem + i * 5 * rem;
 	        var r = 2 * rem;
 	        var button = new _singleButton.singleButton(context, x, y, r, button_id);
 	        buttonList.push(button);
@@ -75,7 +81,7 @@ webpackJsonp([0,1],[
 	    return this;
 	  };
 	  //listener
-	  var initListener = function initListener(buttonList) {
+	  var initListener = function initListener() {
 	    canvas.on('touchstart', function (e) {
 	      var rect = canvas[0].getBoundingClientRect();
 	      var x = e.touches[0].clientX - rect.left;
@@ -88,7 +94,6 @@ webpackJsonp([0,1],[
 	          lastButton = pressedButton;
 	        }
 	      }
-	      console.log(pwd_stack);
 	    });
 
 	    canvas.on('touchmove', function (e) {
@@ -115,6 +120,7 @@ webpackJsonp([0,1],[
 	            lastButton = pressedButton;
 	          } else {
 	            if (pwd_stack[pwd_stack.length - 1] == pressedButton && lastButton == null) {
+	              lastButton = pressedButton;
 	              pressedButton.toUncovered();
 	              pwd_stack.pop();
 	            }
@@ -124,14 +130,36 @@ webpackJsonp([0,1],[
 	      if (inEmptySpace) {
 	        lastButton = null;
 	      }
-	      console.log(pwd_stack);
 	    });
 
 	    canvas.on('touchend', function (e) {
 	      if (pwd_stack.length < 2) {
+	        if (pwd_stack.length != 0) {
+	          pwd_stack[0].toUncovered();
+	        }
 	        pwd_stack = [];
-	        console.log(pwd_stack);
+	        return;
 	      }
+	      var temp_pwd = "";
+	      for (var i = 0; i < pwd_stack.length; i++) {
+	        temp_pwd += pwd_stack[i].id;
+	      }
+	      if (!pwd) {
+	        pwd = temp_pwd;
+	        alert("set success!");
+	      } else {
+	        if (pwd == temp_pwd) {
+	          alert("verified!");
+	        } else {
+	          alert("wrong pwd!");
+	        }
+	      }
+	      for (var _i = 0; _i < pwd_stack.length; _i++) {
+	        pwd_stack[_i].toUncovered();
+	      }
+	      pwd_stack = [];
+	      lastButton = null;
+	      console.log(pwd);
 	    });
 	  };
 	  //run
@@ -1753,7 +1781,7 @@ webpackJsonp([0,1],[
 	        this.id = id;
 	        this.uncover_color = "#FFE1FF";
 	        this.covered_color = "#98F5FF";
-	        this.draw(this.uncover_color);
+	        this.toUncovered();
 	    }
 
 	    _createClass(singleButton, [{
@@ -1770,12 +1798,6 @@ webpackJsonp([0,1],[
 	        value: function inbound(x, y) {
 	            var dist = Math.sqrt(Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2));
 	            if (dist < this.r) {
-	                var posdata = {
-	                    x: this.x,
-	                    y: this.y,
-	                    id: this.id,
-	                    r: this.r
-	                };
 	                return this;
 	            }
 	            return null;

@@ -26,6 +26,7 @@
     "gulp-rename": "^1.2.2",
     "gulp-ruby-sass": "^2.0.6",
     "gulp-webpack": "^1.5.0",
+    "minimatch": "^3.0.2",
     "morgan": "~1.6.1",
     "serve-favicon": "~2.3.0",
     "webpack-zepto": "0.0.1",

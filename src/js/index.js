@@ -16,17 +16,23 @@ function initCanvas(){
   var buttonList = [] ;
   var pwd_stack = [] ;
   var lastButton = null ;
+  var pwd = "" ;
   $(window).resize(resizeCanvas);
 
   function resizeCanvas() {
     let rem = parseInt(window.getComputedStyle(document.documentElement)["fontSize"]) ;
     let canvas_width = 15*rem ;
     let canvas_height = 15*rem ;
+    buttonList = [] ;
+    pwd_stack = [] ;
+    lastButton = null ;
+    pwd = "" ;
     canvas.attr("width", canvas_width);
     canvas.attr("height", canvas_height);
     context.fillStyle = 'gray' ;
     context.roundRect(0, 0, canvas.width(), canvas.height(),8);
     context.drawRoundButtons(rem) ;
+    alert("enter the code") ;
   };
   //add roundRect function to draw roundRect
   CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -49,8 +55,8 @@ function initCanvas(){
     for(let i=0; i<3 ;i++){
       for(let j=0; j<3 ;j++){
         //one circle get 5rem box, radius is 4rem,0.5rem padding each side
-        let x = 2.5*rem + i*5*rem;
-        let y = 2.5*rem + j*5*rem;
+        let x = 2.5*rem + j*5*rem;
+        let y = 2.5*rem + i*5*rem;
         let r = 2*rem;
         var button = new singleButton(context,x,y,r,button_id) ;
         buttonList.push(button) ;
@@ -60,7 +66,7 @@ function initCanvas(){
     return this ;
   }
   //listener
-  var initListener = function(buttonList){
+  var initListener = function(){
     canvas.on('touchstart',function(e){
       let rect = canvas[0].getBoundingClientRect();
       let x = e.touches[0].clientX - rect.left ;
@@ -73,7 +79,6 @@ function initCanvas(){
             lastButton = pressedButton ;
         }
       }
-      console.log(pwd_stack) ;
     });
 
     canvas.on('touchmove',function(e){
@@ -100,6 +105,7 @@ function initCanvas(){
             lastButton = pressedButton ;
           }else{
             if(pwd_stack[pwd_stack.length-1]==pressedButton&&lastButton==null){
+              lastButton = pressedButton ;
               pressedButton.toUncovered() ;
               pwd_stack.pop() ;
             }
@@ -109,14 +115,36 @@ function initCanvas(){
       if(inEmptySpace){
         lastButton = null ;
       }
-      console.log(pwd_stack) ;
     });
 
     canvas.on('touchend',function(e){
       if(pwd_stack.length<2){
+        if(pwd_stack.length!=0){
+          pwd_stack[0].toUncovered() ;
+        }
         pwd_stack = [] ;
-        console.log(pwd_stack) ;
+        return ;
       }
+      let temp_pwd = "" ;
+      for(let i=0; i<pwd_stack.length;i++){
+        temp_pwd+=pwd_stack[i].id ;
+      }
+      if(!pwd) {
+        pwd = temp_pwd ;
+        alert("set success!");
+      }else{
+        if(pwd==temp_pwd){
+          alert("verified!") ;
+        }else{
+          alert("wrong pwd!") ;
+        }
+      }
+      for(let i=0; i<pwd_stack.length;i++){
+        pwd_stack[i].toUncovered() ;
+      }
+      pwd_stack = [] ;
+      lastButton = null ;
+      console.log(pwd) ;
     }) ;
   }
   //run
