@@ -30,8 +30,7 @@ webpackJsonp([0,1],[
 	  var pwd_stack = [];
 	  var lastButton = null;
 	  var pwd = "";
-	  var tempfixedpoint = {};
-	  var linehandler = new _lineHandler.lineHandler(context); //画线的工具集
+	  var linehandler = new _lineHandler.lineHandler(canvas, context); //画线的工具集
 	  (0, _webpackZepto2.default)(window).resize(resizeCanvas);
 
 	  function resizeCanvas() {
@@ -98,6 +97,7 @@ webpackJsonp([0,1],[
 	          lastButton = pressedButton;
 	          linehandler.tempfixedX = pressedButton.x;
 	          linehandler.tempfixedY = pressedButton.y;
+	          linehandler.addToQuery();
 	        }
 	      }
 	    });
@@ -106,7 +106,6 @@ webpackJsonp([0,1],[
 	      var rect = canvas[0].getBoundingClientRect();
 	      var x = e.touches[0].clientX - rect.left;
 	      var y = e.touches[0].clientY - rect.top;
-	      linehandler.clearMovingline();
 	      //如果还在同一个button中就return
 	      if (lastButton != null) {
 	        var dist = Math.sqrt(Math.pow(x - lastButton.x, 2) + Math.pow(y - lastButton.y, 2));
@@ -125,7 +124,7 @@ webpackJsonp([0,1],[
 	            //先画线后画圆
 	            if (!linehandler.tempfixedX) {
 	              linehandler.draw({ x: pressedButton.x, y: pressedButton.y }, 'white');
-	              linehandler.addToQuery(tempfixedpoint.x, tempfixedpoint.y, pressedButton.x, pressedButton.y);
+	              linehandler.addToQuery();
 	            } else {
 	              linehandler.tempfixedX = pressedButton.x;
 	              linehandler.tempfixedY = pressedButton.y;
@@ -139,17 +138,15 @@ webpackJsonp([0,1],[
 	              lastButton = pressedButton;
 	              pressedButton.toUncovered();
 	              pwd_stack.pop();
+	              //todo restore set fixed end
 	            }
 	          }
 	        }
 	      }
 	      if (inEmptySpace) {
-	        if (linehandler.tempfixedX) {
-	          linehandler.clearMovingline();
-	          linehandler.draw({ x: x, y: y }, 'white');
-	          linehandler.lastMovingX = x;
-	          linehandler.lastMovingY = y;
-	        }
+	        //todo restore
+	        linehandler.popFromQuery();
+	        linehandler.draw({ x: x, y: y }, 'white');
 	        lastButton = null;
 	      }
 	    });
@@ -1856,15 +1853,14 @@ webpackJsonp([0,1],[
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var lineHandler = function () {
-	    function lineHandler(context) {
+	    function lineHandler(canvas, context) {
 	        _classCallCheck(this, lineHandler);
 
 	        this.linearquery = [];
+	        this.canvas = canvas;
 	        this.context = context;
 	        this.tempfixedX = null;
 	        this.tempfixedY = null;
-	        this.lastMovingX = null;
-	        this.lastMovingY = null;
 	    }
 
 	    _createClass(lineHandler, [{
@@ -1881,38 +1877,25 @@ webpackJsonp([0,1],[
 	        }
 	    }, {
 	        key: "addToQuery",
-	        value: function addToQuery(x1, y1, x2, y2) {
-	            var templinear = {
-	                x1: point1.x,
-	                y1: point1.y,
-	                x2: point2.x,
-	                y2: point2.y
-	            };
-	            this.linearquery.push(templinear);
+	        value: function addToQuery() {
+	            var context = this.context;
+	            var canvas = this.canvas;
+	            var linearquery = this.linearquery;
+	            var imagedata = context.getImageData(0, 0, canvas.width(), canvas.height());
+	            console.log(imagedata);
+	            linearquery.push(imagedata);
+	        }
+	    }, {
+	        key: "popFromQuery",
+	        value: function popFromQuery() {
+	            var context = this.context;
+	            var linearquery = this.linearquery;
+	            context.putImageData(linearquery[linearquery.length - 1], 0, 0);
 	        }
 	    }, {
 	        key: "clear",
 	        value: function clear() {
 	            this.linearquery = [];
-	        }
-	    }, {
-	        key: "clearMovingline",
-	        value: function clearMovingline() {
-	            if (this.tempfixedX) {
-	                console.log("hi");
-	                this.draw({ x: this.lastMovingX, y: this.lastMovingY }, 'gray');
-	            }
-	        }
-	    }, {
-	        key: "clearLastLine",
-	        value: function clearLastLine() {
-	            if (this.linearquery.length !== 0) {
-	                var context = this.context;
-	                var lastline = this.linearquery.pop();
-	                //this.draw() ;
-	            } else {
-	                return null;
-	            }
 	        }
 	    }]);
 

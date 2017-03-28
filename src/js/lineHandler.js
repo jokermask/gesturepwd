@@ -1,12 +1,11 @@
 class lineHandler{
 
-    constructor(context){
+    constructor(canvas,context){
         this.linearquery = [] ;
+        this.canvas = canvas ;
         this.context = context ;
         this.tempfixedX = null ;
         this.tempfixedY = null ;
-        this.lastMovingX = null ;
-        this.lastMovingY = null ;
     }
 
     draw(point,color){
@@ -20,37 +19,25 @@ class lineHandler{
         context.closePath() ;
     }
 
-    addToQuery(x1,y1,x2,y2){
-        let templinear = {
-            x1:point1.x,
-            y1:point1.y,
-            x2:point2.x,
-            y2:point2.y
-        }
-        this.linearquery.push(templinear) ;
+    addToQuery(){
+        let context = this.context ;
+        let canvas = this.canvas ;
+        let linearquery = this.linearquery ;
+        let imagedata = context.getImageData(0,0,canvas.width(),canvas.height()) ;
+        console.log(imagedata) ;
+        linearquery.push(imagedata) ;
+    }
+
+    popFromQuery(){
+        let context = this.context ;
+        let linearquery = this.linearquery ;
+        context.putImageData(linearquery[linearquery.length-1],0,0) ;
     }
 
     clear(){
         this.linearquery = [] ;
     }
 
-
-    clearMovingline(){
-        if(this.tempfixedX){
-            console.log("hi") ;
-            this.draw({x:this.lastMovingX,y:this.lastMovingY},'gray') ;
-        }
-    }
-
-    clearLastLine(){
-        if(this.linearquery.length!==0){
-            let context= this.context ;
-            let lastline = this.linearquery.pop() ;
-            //this.draw() ;
-        }else{
-            return null ;
-        }
-    }
 }
 
 export {lineHandler};

@@ -18,8 +18,7 @@ function initCanvas(){
   var pwd_stack = [] ;
   var lastButton = null ;
   var pwd = "" ;
-  var tempfixedpoint = {};
-  var linehandler = new lineHandler(context) ;//画线的工具集
+  var linehandler = new lineHandler(canvas,context) ;//画线的工具集
   $(window).resize(resizeCanvas);
 
   function resizeCanvas() {
@@ -82,6 +81,7 @@ function initCanvas(){
             lastButton = pressedButton ;
             linehandler.tempfixedX = pressedButton.x ;
             linehandler.tempfixedY = pressedButton.y ;
+            linehandler.addToQuery() ;
         }
       }
     });
@@ -90,7 +90,6 @@ function initCanvas(){
       let rect = canvas[0].getBoundingClientRect();
       let x = e.touches[0].clientX - rect.left ;
       let y = e.touches[0].clientY - rect.top ;
-      linehandler.clearMovingline() ;
       //如果还在同一个button中就return
       if(lastButton!=null){
         let dist = Math.sqrt(Math.pow(x-lastButton.x,2)+Math.pow(y-lastButton.y,2)) ;
@@ -109,7 +108,7 @@ function initCanvas(){
             //先画线后画圆
             if(!linehandler.tempfixedX) {
               linehandler.draw({x: pressedButton.x, y: pressedButton.y},'white');
-              linehandler.addToQuery(tempfixedpoint.x,tempfixedpoint.y,pressedButton.x,pressedButton.y) ;
+              linehandler.addToQuery();
             }else{
               linehandler.tempfixedX = pressedButton.x ;
               linehandler.tempfixedY = pressedButton.y ;
@@ -123,17 +122,15 @@ function initCanvas(){
               lastButton = pressedButton ;
               pressedButton.toUncovered() ;
               pwd_stack.pop() ;
+              //todo restore set fixed end
             }
           }
         }
       }
       if(inEmptySpace){
-        if(linehandler.tempfixedX) {
-          linehandler.clearMovingline();
-          linehandler.draw({x: x, y: y}, 'white');
-          linehandler.lastMovingX = x;
-          linehandler.lastMovingY = y;
-        }
+        //todo restore
+        linehandler.popFromQuery() ;
+        linehandler.draw({x: x, y: y}, 'white');
         lastButton = null ;
       }
     });
