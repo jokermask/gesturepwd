@@ -17,6 +17,7 @@ function initCanvas(){
   var buttonList = [] ;
   var pwd_stack = [] ;
   var lastButton = null ;
+  var buttonToRedraw = null ;
   var pwd = "" ;
   var linehandler = new lineHandler(canvas,context) ;//画线的工具集
   $(window).resize(resizeCanvas);
@@ -65,6 +66,7 @@ function initCanvas(){
         button_id++ ;
       }
     }
+    linehandler.addToQuery() ;
     return this ;
   }
   //listener
@@ -79,6 +81,7 @@ function initCanvas(){
             pwd_stack.push(pressedButton) ;
             pressedButton.toCovered() ;
             lastButton = pressedButton ;
+            buttonToRedraw = pressedButton ;
             linehandler.tempfixedX = pressedButton.x ;
             linehandler.tempfixedY = pressedButton.y ;
             linehandler.addToQuery() ;
@@ -106,41 +109,61 @@ function initCanvas(){
           inEmptySpace = false ;
           if(pwd_stack.indexOf(pressedButton)==-1){
             //先画线后画圆
-            if(!linehandler.tempfixedX) {
+            if(linehandler.tempfixedX) {
+              linehandler.getLastFromQuery() ;
               linehandler.draw({x: pressedButton.x, y: pressedButton.y},'white');
+              buttonToRedraw.toCovered() ;
+              pressedButton.toCovered() ;
               linehandler.addToQuery();
             }else{
-              linehandler.tempfixedX = pressedButton.x ;
-              linehandler.tempfixedY = pressedButton.y ;
+              pressedButton.toCovered() ;
             }
 
+            linehandler.tempfixedX = pressedButton.x ;
+            linehandler.tempfixedY = pressedButton.y ;
             pwd_stack.push(pressedButton) ;
-            pressedButton.toCovered() ;
             lastButton = pressedButton ;
+            buttonToRedraw = pressedButton ;
           }else{
-            if(pwd_stack[pwd_stack.length-1]==pressedButton&&lastButton==null){
+            let queryTailButton = pwd_stack[pwd_stack.length-1] ;
+            if(queryTailButton==pressedButton&&lastButton==null){
               lastButton = pressedButton ;
-              pressedButton.toUncovered() ;
-              pwd_stack.pop() ;
-              //todo restore set fixed end
+              linehandler.getLastFromQuery() ;
             }
           }
         }
       }
       if(inEmptySpace){
-        //todo restore
-        linehandler.popFromQuery() ;
-        linehandler.draw({x: x, y: y}, 'white');
-        lastButton = null ;
+        if(!linehandler.tempfixedX){
+          return ;
+        }
+        let conflictbutton = linehandler.checkCross(buttonList,pwd_stack,x,y) ;
+        linehandler.getLastFromQuery();
+        if(!conflictbutton) {
+          linehandler.draw({x: x, y: y}, 'white');
+          buttonToRedraw.toCovered();
+          lastButton = null;
+        }else{
+          console.log(conflictbutton) ;
+          linehandler.draw({x: conflictbutton.x, y: conflictbutton.y},'white');
+          buttonToRedraw.toCovered() ;
+          conflictbutton.toCovered() ;
+          linehandler.addToQuery() ;
+          linehandler.tempfixedX = conflictbutton.x ;
+          linehandler.tempfixedY = conflictbutton.y ;
+          linehandler.draw({x: x, y: y}, 'white');
+          conflictbutton.toCovered() ;
+          pwd_stack.push(conflictbutton) ;
+          lastButton = conflictbutton ;
+          buttonToRedraw = conflictbutton ;
+        }
       }
     });
 
     canvas.on('touchend',function(e){
+      linehandler.getInitStatu() ;
+      lastButton = null ;
       if(pwd_stack.length<2){
-        if(pwd_stack.length!=0){
-          pwd_stack[0].toUncovered() ;
-        }
-        pwd_stack = [] ;
         return ;
       }
       let temp_pwd = "" ;
@@ -157,11 +180,8 @@ function initCanvas(){
           alert("wrong pwd!") ;
         }
       }
-      for(let i=0; i<pwd_stack.length;i++){
-        pwd_stack[i].toUncovered() ;
-      }
+      linehandler.getInitStatu() ;
       pwd_stack = [] ;
-      lastButton = null ;
       console.log(pwd) ;
     }) ;
   }

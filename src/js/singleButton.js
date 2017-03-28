@@ -18,6 +18,7 @@ class singleButton{
         context.beginPath() ;
         context.arc(this.x,this.y,this.r,0,2*Math.PI) ;
         context.fill() ;
+        context.closePath() ;
     }
 
     inbound(x,y){

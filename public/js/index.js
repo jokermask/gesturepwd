@@ -29,6 +29,7 @@ webpackJsonp([0,1],[
 	  var buttonList = [];
 	  var pwd_stack = [];
 	  var lastButton = null;
+	  var buttonToRedraw = null;
 	  var pwd = "";
 	  var linehandler = new _lineHandler.lineHandler(canvas, context); //画线的工具集
 	  (0, _webpackZepto2.default)(window).resize(resizeCanvas);
@@ -81,6 +82,7 @@ webpackJsonp([0,1],[
 	        button_id++;
 	      }
 	    }
+	    linehandler.addToQuery();
 	    return this;
 	  };
 	  //listener
@@ -95,6 +97,7 @@ webpackJsonp([0,1],[
 	          pwd_stack.push(pressedButton);
 	          pressedButton.toCovered();
 	          lastButton = pressedButton;
+	          buttonToRedraw = pressedButton;
 	          linehandler.tempfixedX = pressedButton.x;
 	          linehandler.tempfixedY = pressedButton.y;
 	          linehandler.addToQuery();
@@ -122,41 +125,61 @@ webpackJsonp([0,1],[
 	          inEmptySpace = false;
 	          if (pwd_stack.indexOf(pressedButton) == -1) {
 	            //先画线后画圆
-	            if (!linehandler.tempfixedX) {
+	            if (linehandler.tempfixedX) {
+	              linehandler.getLastFromQuery();
 	              linehandler.draw({ x: pressedButton.x, y: pressedButton.y }, 'white');
+	              buttonToRedraw.toCovered();
+	              pressedButton.toCovered();
 	              linehandler.addToQuery();
 	            } else {
-	              linehandler.tempfixedX = pressedButton.x;
-	              linehandler.tempfixedY = pressedButton.y;
+	              pressedButton.toCovered();
 	            }
 
+	            linehandler.tempfixedX = pressedButton.x;
+	            linehandler.tempfixedY = pressedButton.y;
 	            pwd_stack.push(pressedButton);
-	            pressedButton.toCovered();
 	            lastButton = pressedButton;
+	            buttonToRedraw = pressedButton;
 	          } else {
-	            if (pwd_stack[pwd_stack.length - 1] == pressedButton && lastButton == null) {
+	            var queryTailButton = pwd_stack[pwd_stack.length - 1];
+	            if (queryTailButton == pressedButton && lastButton == null) {
 	              lastButton = pressedButton;
-	              pressedButton.toUncovered();
-	              pwd_stack.pop();
-	              //todo restore set fixed end
+	              linehandler.getLastFromQuery();
 	            }
 	          }
 	        }
 	      }
 	      if (inEmptySpace) {
-	        //todo restore
-	        linehandler.popFromQuery();
-	        linehandler.draw({ x: x, y: y }, 'white');
-	        lastButton = null;
+	        if (!linehandler.tempfixedX) {
+	          return;
+	        }
+	        var conflictbutton = linehandler.checkCross(buttonList, pwd_stack, x, y);
+	        linehandler.getLastFromQuery();
+	        if (!conflictbutton) {
+	          linehandler.draw({ x: x, y: y }, 'white');
+	          buttonToRedraw.toCovered();
+	          lastButton = null;
+	        } else {
+	          console.log(conflictbutton);
+	          linehandler.draw({ x: conflictbutton.x, y: conflictbutton.y }, 'white');
+	          buttonToRedraw.toCovered();
+	          conflictbutton.toCovered();
+	          linehandler.addToQuery();
+	          linehandler.tempfixedX = conflictbutton.x;
+	          linehandler.tempfixedY = conflictbutton.y;
+	          linehandler.draw({ x: x, y: y }, 'white');
+	          conflictbutton.toCovered();
+	          pwd_stack.push(conflictbutton);
+	          lastButton = conflictbutton;
+	          buttonToRedraw = conflictbutton;
+	        }
 	      }
 	    });
 
 	    canvas.on('touchend', function (e) {
+	      linehandler.getInitStatu();
+	      lastButton = null;
 	      if (pwd_stack.length < 2) {
-	        if (pwd_stack.length != 0) {
-	          pwd_stack[0].toUncovered();
-	        }
-	        pwd_stack = [];
 	        return;
 	      }
 	      var temp_pwd = "";
@@ -173,11 +196,8 @@ webpackJsonp([0,1],[
 	          alert("wrong pwd!");
 	        }
 	      }
-	      for (var _i = 0; _i < pwd_stack.length; _i++) {
-	        pwd_stack[_i].toUncovered();
-	      }
+	      linehandler.getInitStatu();
 	      pwd_stack = [];
-	      lastButton = null;
 	      console.log(pwd);
 	    });
 	  };
@@ -1811,6 +1831,7 @@ webpackJsonp([0,1],[
 	            context.beginPath();
 	            context.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
 	            context.fill();
+	            context.closePath();
 	        }
 	    }, {
 	        key: "inbound",
@@ -1869,7 +1890,7 @@ webpackJsonp([0,1],[
 	            var context = this.context;
 	            context.beginPath();
 	            context.strokeStyle = color; //设置填充颜色
-	            context.lineWidth = "3px";
+	            context.lineWidth = 5;
 	            context.moveTo(this.tempfixedX, this.tempfixedY);
 	            context.lineTo(point.x, point.y);
 	            context.stroke();
@@ -1882,15 +1903,66 @@ webpackJsonp([0,1],[
 	            var canvas = this.canvas;
 	            var linearquery = this.linearquery;
 	            var imagedata = context.getImageData(0, 0, canvas.width(), canvas.height());
-	            console.log(imagedata);
 	            linearquery.push(imagedata);
 	        }
 	    }, {
-	        key: "popFromQuery",
-	        value: function popFromQuery() {
+	        key: "queryPop",
+	        value: function queryPop() {
+	            var linearquery = this.linearquery;
+	            linearquery.pop();
+	        }
+	    }, {
+	        key: "getLastFromQuery",
+	        value: function getLastFromQuery() {
 	            var context = this.context;
 	            var linearquery = this.linearquery;
 	            context.putImageData(linearquery[linearquery.length - 1], 0, 0);
+	        }
+	    }, {
+	        key: "getInitStatu",
+	        value: function getInitStatu() {
+	            var context = this.context;
+	            var linearquery = this.linearquery;
+	            context.putImageData(linearquery[0], 0, 0);
+	        }
+	    }, {
+	        key: "checkCross",
+	        value: function checkCross(buttonlist, pwd_stack, x, y) {
+	            var fixedX = this.tempfixedX;
+	            var fixedY = this.tempfixedY;
+	            for (var i = 0; i < buttonlist.length; i++) {
+	                var tempbutton = buttonlist[i];
+	                var flag = false; //当前button是否已经被点亮
+	                for (var j = 0; j < pwd_stack.length; j++) {
+	                    if (tempbutton == pwd_stack[j]) {
+	                        flag = true;
+	                    }
+	                }
+	                if (!flag && this.isConflict(x, y, tempbutton.x, tempbutton.y, tempbutton.r)) {
+	                    return tempbutton;
+	                }
+	            }
+	            return null;
+	        }
+	    }, {
+	        key: "isConflict",
+	        value: function isConflict(x1, y1, x2, y2, r) {
+	            var fixedX = this.tempfixedX;
+	            var fixedY = this.tempfixedY;
+	            var k1 = (fixedY - y1) / (fixedX - x1);
+	            var k2 = 1 / k1;
+	            var x = (k1 * x1 - k2 * x2 + y2 - y1) / (k1 - k2);
+	            var y = k1 * (x - x1) + y1;
+	            var line_dist = Math.sqrt(Math.pow(fixedX - x1, 2) + Math.pow(fixedY - y1, 2));
+	            var temp_dist = Math.sqrt(Math.pow(fixedX - x, 2) + Math.pow(fixedY - y, 2));
+	            if (line_dist < temp_dist) {
+	                return false;
+	            }
+	            var vertical_dist = Math.sqrt(Math.pow(x - x2, 2) + Math.pow(y - y2, 2));
+	            if (vertical_dist <= r) {
+	                return true;
+	            }
+	            return false;
 	        }
 	    }, {
 	        key: "clear",
