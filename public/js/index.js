@@ -10,6 +10,8 @@ webpackJsonp([0,1],[
 
 	var _singleButton = __webpack_require__(2);
 
+	var _lineHandler = __webpack_require__(3);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	(0, _webpackZepto2.default)(function () {
@@ -28,6 +30,8 @@ webpackJsonp([0,1],[
 	  var pwd_stack = [];
 	  var lastButton = null;
 	  var pwd = "";
+	  var tempfixedpoint = {};
+	  var linehandler = new _lineHandler.lineHandler(context); //画线的工具集
 	  (0, _webpackZepto2.default)(window).resize(resizeCanvas);
 
 	  function resizeCanvas() {
@@ -92,6 +96,8 @@ webpackJsonp([0,1],[
 	          pwd_stack.push(pressedButton);
 	          pressedButton.toCovered();
 	          lastButton = pressedButton;
+	          linehandler.tempfixedX = pressedButton.x;
+	          linehandler.tempfixedY = pressedButton.y;
 	        }
 	      }
 	    });
@@ -100,6 +106,7 @@ webpackJsonp([0,1],[
 	      var rect = canvas[0].getBoundingClientRect();
 	      var x = e.touches[0].clientX - rect.left;
 	      var y = e.touches[0].clientY - rect.top;
+	      linehandler.clearMovingline();
 	      //如果还在同一个button中就return
 	      if (lastButton != null) {
 	        var dist = Math.sqrt(Math.pow(x - lastButton.x, 2) + Math.pow(y - lastButton.y, 2));
@@ -115,6 +122,15 @@ webpackJsonp([0,1],[
 	        if (pressedButton != null) {
 	          inEmptySpace = false;
 	          if (pwd_stack.indexOf(pressedButton) == -1) {
+	            //先画线后画圆
+	            if (!linehandler.tempfixedX) {
+	              linehandler.draw({ x: pressedButton.x, y: pressedButton.y }, 'white');
+	              linehandler.addToQuery(tempfixedpoint.x, tempfixedpoint.y, pressedButton.x, pressedButton.y);
+	            } else {
+	              linehandler.tempfixedX = pressedButton.x;
+	              linehandler.tempfixedY = pressedButton.y;
+	            }
+
 	            pwd_stack.push(pressedButton);
 	            pressedButton.toCovered();
 	            lastButton = pressedButton;
@@ -128,6 +144,12 @@ webpackJsonp([0,1],[
 	        }
 	      }
 	      if (inEmptySpace) {
+	        if (linehandler.tempfixedX) {
+	          linehandler.clearMovingline();
+	          linehandler.draw({ x: x, y: y }, 'white');
+	          linehandler.lastMovingX = x;
+	          linehandler.lastMovingY = y;
+	        }
 	        lastButton = null;
 	      }
 	    });
@@ -1818,6 +1840,86 @@ webpackJsonp([0,1],[
 	}();
 
 	exports.singleButton = singleButton;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var lineHandler = function () {
+	    function lineHandler(context) {
+	        _classCallCheck(this, lineHandler);
+
+	        this.linearquery = [];
+	        this.context = context;
+	        this.tempfixedX = null;
+	        this.tempfixedY = null;
+	        this.lastMovingX = null;
+	        this.lastMovingY = null;
+	    }
+
+	    _createClass(lineHandler, [{
+	        key: "draw",
+	        value: function draw(point, color) {
+	            var context = this.context;
+	            context.beginPath();
+	            context.strokeStyle = color; //设置填充颜色
+	            context.lineWidth = "3px";
+	            context.moveTo(this.tempfixedX, this.tempfixedY);
+	            context.lineTo(point.x, point.y);
+	            context.stroke();
+	            context.closePath();
+	        }
+	    }, {
+	        key: "addToQuery",
+	        value: function addToQuery(x1, y1, x2, y2) {
+	            var templinear = {
+	                x1: point1.x,
+	                y1: point1.y,
+	                x2: point2.x,
+	                y2: point2.y
+	            };
+	            this.linearquery.push(templinear);
+	        }
+	    }, {
+	        key: "clear",
+	        value: function clear() {
+	            this.linearquery = [];
+	        }
+	    }, {
+	        key: "clearMovingline",
+	        value: function clearMovingline() {
+	            if (this.tempfixedX) {
+	                console.log("hi");
+	                this.draw({ x: this.lastMovingX, y: this.lastMovingY }, 'gray');
+	            }
+	        }
+	    }, {
+	        key: "clearLastLine",
+	        value: function clearLastLine() {
+	            if (this.linearquery.length !== 0) {
+	                var context = this.context;
+	                var lastline = this.linearquery.pop();
+	                //this.draw() ;
+	            } else {
+	                return null;
+	            }
+	        }
+	    }]);
+
+	    return lineHandler;
+	}();
+
+	exports.lineHandler = lineHandler;
 
 /***/ }
 ]);
