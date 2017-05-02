@@ -1,6 +1,6 @@
 webpackJsonp([0,1],[
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -8,9 +8,7 @@ webpackJsonp([0,1],[
 
 	var _webpackZepto2 = _interopRequireDefault(_webpackZepto);
 
-	var _singleButton = __webpack_require__(2);
-
-	var _lineHandler = __webpack_require__(3);
+	var _gesturepwd = __webpack_require__(2);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20,195 +18,13 @@ webpackJsonp([0,1],[
 
 	function init() {
 	  FastClick.attach(document.body);
-	  initCanvas();
+	  var canvas = (0, _webpackZepto2.default)("#canvas");
+	  var container = new _gesturepwd.gesturepwd(canvas);
 	}
 
-	function initCanvas() {
-	  var canvas = (0, _webpackZepto2.default)('#canvas');
-	  var context = canvas[0].getContext('2d');
-	  var buttonList = [];
-	  var pwd_stack = [];
-	  var lastButton = null;
-	  var buttonToRedraw = null;
-	  var pwd = "";
-	  var linehandler = new _lineHandler.lineHandler(canvas, context); //画线的工具集
-	  (0, _webpackZepto2.default)(window).resize(resizeCanvas);
-
-	  function resizeCanvas() {
-	    var rem = parseInt(window.getComputedStyle(document.documentElement)["fontSize"]);
-	    var canvas_width = 15 * rem;
-	    var canvas_height = 15 * rem;
-	    buttonList = [];
-	    pwd_stack = [];
-	    lastButton = null;
-	    pwd = "";
-	    canvas.attr("width", canvas_width);
-	    canvas.attr("height", canvas_height);
-	    context.fillStyle = 'gray';
-	    context.roundRect(0, 0, canvas.width(), canvas.height(), 8);
-	    context.drawRoundButtons(rem);
-	    alert("enter the code");
-	  };
-	  //add roundRect function to draw roundRect
-	  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-	    if (w < 2 * r) {
-	      r = w / 2;
-	    }
-	    if (h < 2 * r) {
-	      r = h / 2;
-	    }
-	    this.beginPath();
-	    this.moveTo(x + r, y);
-	    this.arcTo(x + w, y, x + w, y + h, r);
-	    this.arcTo(x + w, y + h, x, y + h, r);
-	    this.arcTo(x, y + h, x, y, r);
-	    this.arcTo(x, y, x + w, y, r);
-	    this.closePath();
-	    this.fill();
-	    return this;
-	  };
-	  //function to draw single gesture button
-	  CanvasRenderingContext2D.prototype.drawRoundButtons = function (rem) {
-	    //3rem means leave 1rem padding
-	    var button_id = 1;
-	    for (var i = 0; i < 3; i++) {
-	      for (var j = 0; j < 3; j++) {
-	        //one circle get 5rem box, radius is 4rem,0.5rem padding each side
-	        var x = 2.5 * rem + j * 5 * rem;
-	        var y = 2.5 * rem + i * 5 * rem;
-	        var r = 2 * rem;
-	        var button = new _singleButton.singleButton(context, x, y, r, button_id);
-	        buttonList.push(button);
-	        button_id++;
-	      }
-	    }
-	    linehandler.addToQuery();
-	    return this;
-	  };
-	  //listener
-	  var initListener = function initListener() {
-	    canvas.on('touchstart', function (e) {
-	      var rect = canvas[0].getBoundingClientRect();
-	      var x = e.touches[0].clientX - rect.left;
-	      var y = e.touches[0].clientY - rect.top;
-	      for (var i = 0; i < buttonList.length; i++) {
-	        var pressedButton = buttonList[i].inbound(x, y);
-	        if (pressedButton !== null) {
-	          pwd_stack.push(pressedButton);
-	          pressedButton.toCovered();
-	          lastButton = pressedButton;
-	          buttonToRedraw = pressedButton;
-	          linehandler.tempfixedX = pressedButton.x;
-	          linehandler.tempfixedY = pressedButton.y;
-	          linehandler.addToQuery();
-	        }
-	      }
-	    });
-
-	    canvas.on('touchmove', function (e) {
-	      var rect = canvas[0].getBoundingClientRect();
-	      var x = e.touches[0].clientX - rect.left;
-	      var y = e.touches[0].clientY - rect.top;
-	      //如果还在同一个button中就return
-	      if (lastButton != null) {
-	        var dist = Math.sqrt(Math.pow(x - lastButton.x, 2) + Math.pow(y - lastButton.y, 2));
-	        if (dist < lastButton.r) {
-	          return;
-	        }
-	      }
-
-	      var inEmptySpace = true; //判断是不是在空白位置
-	      for (var i = 0; i < buttonList.length; i++) {
-	        //如果stack没有就入栈，如果有看下是不是lastButton，如果不是就出栈
-	        var pressedButton = buttonList[i].inbound(x, y);
-	        if (pressedButton != null) {
-	          inEmptySpace = false;
-	          if (pwd_stack.indexOf(pressedButton) == -1) {
-	            //先画线后画圆
-	            if (linehandler.tempfixedX) {
-	              linehandler.getLastFromQuery();
-	              linehandler.draw({ x: pressedButton.x, y: pressedButton.y }, 'white');
-	              buttonToRedraw.toCovered();
-	              pressedButton.toCovered();
-	              linehandler.addToQuery();
-	            } else {
-	              pressedButton.toCovered();
-	            }
-
-	            linehandler.tempfixedX = pressedButton.x;
-	            linehandler.tempfixedY = pressedButton.y;
-	            pwd_stack.push(pressedButton);
-	            lastButton = pressedButton;
-	            buttonToRedraw = pressedButton;
-	          } else {
-	            var queryTailButton = pwd_stack[pwd_stack.length - 1];
-	            if (queryTailButton == pressedButton && lastButton == null) {
-	              lastButton = pressedButton;
-	              linehandler.getLastFromQuery();
-	            }
-	          }
-	        }
-	      }
-	      if (inEmptySpace) {
-	        if (!linehandler.tempfixedX) {
-	          return;
-	        }
-	        var conflictbutton = linehandler.checkCross(buttonList, pwd_stack, x, y);
-	        linehandler.getLastFromQuery();
-	        if (!conflictbutton) {
-	          linehandler.draw({ x: x, y: y }, 'white');
-	          buttonToRedraw.toCovered();
-	          lastButton = null;
-	        } else {
-	          console.log(conflictbutton);
-	          linehandler.draw({ x: conflictbutton.x, y: conflictbutton.y }, 'white');
-	          buttonToRedraw.toCovered();
-	          conflictbutton.toCovered();
-	          linehandler.addToQuery();
-	          linehandler.tempfixedX = conflictbutton.x;
-	          linehandler.tempfixedY = conflictbutton.y;
-	          linehandler.draw({ x: x, y: y }, 'white');
-	          conflictbutton.toCovered();
-	          pwd_stack.push(conflictbutton);
-	          lastButton = conflictbutton;
-	          buttonToRedraw = conflictbutton;
-	        }
-	      }
-	    });
-
-	    canvas.on('touchend', function (e) {
-	      linehandler.getInitStatu();
-	      lastButton = null;
-	      if (pwd_stack.length < 2) {
-	        return;
-	      }
-	      var temp_pwd = "";
-	      for (var i = 0; i < pwd_stack.length; i++) {
-	        temp_pwd += pwd_stack[i].id;
-	      }
-	      if (!pwd) {
-	        pwd = temp_pwd;
-	        alert("set success!");
-	      } else {
-	        if (pwd == temp_pwd) {
-	          alert("verified!");
-	        } else {
-	          alert("wrong pwd!");
-	        }
-	      }
-	      linehandler.getInitStatu();
-	      pwd_stack = [];
-	      console.log(pwd);
-	    });
-	  };
-	  //run
-	  resizeCanvas();
-	  initListener(buttonList);
-	}
-
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/* Zepto v1.1.6 - zepto event ajax form ie - zeptojs.com/license */
 
@@ -1795,9 +1611,272 @@ webpackJsonp([0,1],[
 	  }
 	})(Zepto)
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.gesturepwd = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _webpackZepto = __webpack_require__(1);
+
+	var _webpackZepto2 = _interopRequireDefault(_webpackZepto);
+
+	var _singleButton = __webpack_require__(3);
+
+	var _lineHandler = __webpack_require__(4);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var gesturepwd = function () {
+	    function gesturepwd(canvas, param) {
+	        _classCallCheck(this, gesturepwd);
+
+	        var defaultparam = {
+	            canvas_width: 15,
+	            canvas_height: 15,
+	            bg_color: "gray",
+	            button_unactive: "#FFE1FF",
+	            button_active: "#98F5FF",
+	            line_color: "white",
+	            line_width: 5
+	        };
+	        this.canvas = canvas;
+	        this.context = canvas[0].getContext('2d');
+	        this.param = param || defaultparam;
+	        this.buttonList = [];
+	        this.pwd_stack = [];
+	        this.lastButton = null;
+	        this.buttonToRedraw = null;
+	        this.pwd = "";
+	        this.linehandler = new _lineHandler.lineHandler(this.canvas, this.context, this.param.line_color, this.param.line_width); //画线的工具集
+	        this.addExtraFun();
+	        this.initCanvas();
+	        this.initListener();
+	    }
+
+	    _createClass(gesturepwd, [{
+	        key: 'addExtraFun',
+	        value: function addExtraFun() {
+	            var context = this.context;
+	            var param = this.param;
+	            var buttonList = this.buttonList;
+	            var linehandler = this.linehandler;
+	            //向context对象添加自定义方法
+	            //add roundRect function to draw roundRect
+	            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+	                if (w < 2 * r) {
+	                    r = w / 2;
+	                }
+	                if (h < 2 * r) {
+	                    r = h / 2;
+	                }
+	                this.beginPath();
+	                this.moveTo(x + r, y);
+	                this.arcTo(x + w, y, x + w, y + h, r);
+	                this.arcTo(x + w, y + h, x, y + h, r);
+	                this.arcTo(x, y + h, x, y, r);
+	                this.arcTo(x, y, x + w, y, r);
+	                this.closePath();
+	                this.fill();
+	                return this;
+	            };
+	            //function to draw single gesture button
+	            CanvasRenderingContext2D.prototype.drawRoundButtons = function (rem) {
+	                //3rem means leave 1rem padding
+	                var button_id = 1;
+	                for (var i = 0; i < 3; i++) {
+	                    for (var j = 0; j < 3; j++) {
+	                        //one circle get 5rem box, radius is 4rem,0.5rem padding each side
+	                        var x = 2.5 * rem + j * 5 * rem;
+	                        var y = 2.5 * rem + i * 5 * rem;
+	                        var r = 2 * rem;
+	                        var button = new _singleButton.singleButton(context, x, y, r, button_id, param.button_unactive, param.button_active);
+	                        buttonList.push(button);
+	                        button_id++;
+	                    }
+	                }
+	                linehandler.addToQuery();
+	                return this;
+	            };
+	        }
+	    }, {
+	        key: 'initCanvas',
+	        value: function initCanvas() {
+
+	            var canvas = this.canvas;
+	            var param = this.param;
+	            var context = this.context;
+	            var buttonList = this.buttonList;
+	            var pwd_stack = this.pwd_stack;
+	            var lastButton = this.lastButton;
+	            var pwd = this.pwd;
+
+	            (0, _webpackZepto2.default)(window).resize(resizeCanvas);
+	            resizeCanvas();
+
+	            function resizeCanvas() {
+	                //reset
+	                buttonList = [];
+	                pwd_stack = [];
+	                lastButton = null;
+	                pwd = "";
+
+	                var rem = parseInt(window.getComputedStyle(document.documentElement)["fontSize"]);
+	                var canvas_width = param.canvas_width * rem;
+	                var canvas_height = param.canvas_height * rem;
+	                canvas.attr("width", canvas_width);
+	                canvas.attr("height", canvas_height);
+	                context.fillStyle = param.bg_color;
+	                context.roundRect(0, 0, canvas.width(), canvas.height(), 8);
+	                context.drawRoundButtons(rem);
+	                alert("enter the code");
+	            };
+	        }
+	    }, {
+	        key: 'initListener',
+	        value: function initListener() {
+
+	            var canvas = this.canvas;
+	            var pwd_stack = this.pwd_stack;
+	            var buttonToRedraw = this.buttonToRedraw;
+	            var lastButton = this.lastButton;
+	            var linehandler = this.linehandler;
+	            var buttonList = this.buttonList;
+	            //touch start
+	            canvas.on('touchstart', function (e) {
+	                var rect = canvas[0].getBoundingClientRect();
+	                var x = e.touches[0].clientX - rect.left;
+	                var y = e.touches[0].clientY - rect.top;
+	                for (var i = 0; i < buttonList.length; i++) {
+	                    var pressedButton = buttonList[i].inbound(x, y);
+	                    if (pressedButton !== null) {
+	                        pwd_stack.push(pressedButton);
+	                        pressedButton.toCovered();
+	                        lastButton = pressedButton;
+	                        buttonToRedraw = pressedButton;
+	                        linehandler.tempfixedX = pressedButton.x;
+	                        linehandler.tempfixedY = pressedButton.y;
+	                        linehandler.addToQuery();
+	                    }
+	                }
+	            });
+	            //touch move
+	            canvas.on('touchmove', function (e) {
+	                var rect = canvas[0].getBoundingClientRect();
+	                var x = e.touches[0].clientX - rect.left;
+	                var y = e.touches[0].clientY - rect.top;
+	                //如果还在同一个button中就return
+	                if (lastButton != null) {
+	                    var dist = Math.sqrt(Math.pow(x - lastButton.x, 2) + Math.pow(y - lastButton.y, 2));
+	                    if (dist < lastButton.r) {
+	                        return;
+	                    }
+	                }
+
+	                var inEmptySpace = true; //判断是不是在空白位置
+	                for (var i = 0; i < buttonList.length; i++) {
+	                    //如果stack没有就入栈，如果有看下是不是lastButton，如果不是就出栈
+	                    var pressedButton = buttonList[i].inbound(x, y);
+	                    if (pressedButton != null) {
+	                        inEmptySpace = false;
+	                        if (pwd_stack.indexOf(pressedButton) == -1) {
+	                            //先画线后画圆
+	                            if (linehandler.tempfixedX) {
+	                                linehandler.getLastFromQuery();
+	                                linehandler.draw({ x: pressedButton.x, y: pressedButton.y });
+	                                buttonToRedraw.toCovered();
+	                                pressedButton.toCovered();
+	                                linehandler.addToQuery();
+	                            } else {
+	                                pressedButton.toCovered();
+	                            }
+
+	                            linehandler.tempfixedX = pressedButton.x;
+	                            linehandler.tempfixedY = pressedButton.y;
+	                            pwd_stack.push(pressedButton);
+	                            lastButton = pressedButton;
+	                            buttonToRedraw = pressedButton;
+	                        } else {
+	                            var queryTailButton = pwd_stack[pwd_stack.length - 1];
+	                            if (queryTailButton == pressedButton && lastButton == null) {
+	                                lastButton = pressedButton;
+	                                linehandler.getLastFromQuery();
+	                            }
+	                        }
+	                    }
+	                }
+	                if (inEmptySpace) {
+	                    if (!linehandler.tempfixedX) {
+	                        return;
+	                    }
+	                    var conflictbutton = linehandler.checkCross(buttonList, pwd_stack, x, y);
+	                    linehandler.getLastFromQuery();
+	                    if (!conflictbutton) {
+	                        linehandler.draw({ x: x, y: y });
+	                        buttonToRedraw.toCovered();
+	                        lastButton = null;
+	                    } else {
+	                        console.log(conflictbutton);
+	                        linehandler.draw({ x: conflictbutton.x, y: conflictbutton.y });
+	                        buttonToRedraw.toCovered();
+	                        conflictbutton.toCovered();
+	                        linehandler.addToQuery();
+	                        linehandler.tempfixedX = conflictbutton.x;
+	                        linehandler.tempfixedY = conflictbutton.y;
+	                        linehandler.draw({ x: x, y: y });
+	                        conflictbutton.toCovered();
+	                        pwd_stack.push(conflictbutton);
+	                        lastButton = conflictbutton;
+	                        buttonToRedraw = conflictbutton;
+	                    }
+	                }
+	            });
+	            //touch end
+	            canvas.on('touchend', function (e) {
+	                var pwd = this.pwd;
+	                linehandler.getInitStatu();
+	                lastButton = null;
+	                if (pwd_stack.length < 2) {
+	                    return;
+	                }
+	                var temp_pwd = "";
+	                for (var i = 0; i < pwd_stack.length; i++) {
+	                    temp_pwd += pwd_stack[i].id;
+	                }
+	                if (!pwd) {
+	                    pwd = temp_pwd;
+	                    alert("set success!");
+	                } else {
+	                    if (pwd == temp_pwd) {
+	                        alert("verified!");
+	                    } else {
+	                        alert("wrong pwd!");
+	                    }
+	                }
+	                linehandler.getInitStatu();
+	                pwd_stack = [];
+	                console.log(pwd);
+	            });
+	        }
+	    }]);
+
+	    return gesturepwd;
+	}();
+
+	exports.gesturepwd = gesturepwd;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -1810,7 +1889,7 @@ webpackJsonp([0,1],[
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var singleButton = function () {
-	    function singleButton(context, x, y, r, id) {
+	    function singleButton(context, x, y, r, id, uncover_color, cover_color) {
 	        _classCallCheck(this, singleButton);
 
 	        this.context = context;
@@ -1818,8 +1897,8 @@ webpackJsonp([0,1],[
 	        this.y = y;
 	        this.r = r;
 	        this.id = id;
-	        this.uncover_color = "#FFE1FF";
-	        this.covered_color = "#98F5FF";
+	        this.uncover_color = uncover_color;
+	        this.covered_color = cover_color;
 	        this.toUncovered();
 	    }
 
@@ -1859,9 +1938,9 @@ webpackJsonp([0,1],[
 
 	exports.singleButton = singleButton;
 
-/***/ },
-/* 3 */
-/***/ function(module, exports) {
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -1874,23 +1953,27 @@ webpackJsonp([0,1],[
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var lineHandler = function () {
-	    function lineHandler(canvas, context) {
+	    function lineHandler(canvas, context, color, width) {
 	        _classCallCheck(this, lineHandler);
 
 	        this.linearquery = [];
 	        this.canvas = canvas;
 	        this.context = context;
+	        this.color = color;
+	        this.line_width = width;
 	        this.tempfixedX = null;
 	        this.tempfixedY = null;
 	    }
 
 	    _createClass(lineHandler, [{
 	        key: "draw",
-	        value: function draw(point, color) {
+	        value: function draw(point) {
 	            var context = this.context;
+	            var color = this.color;
+	            var width = this.width;
 	            context.beginPath();
 	            context.strokeStyle = color; //设置填充颜色
-	            context.lineWidth = 5;
+	            context.lineWidth = this.width;
 	            context.moveTo(this.tempfixedX, this.tempfixedY);
 	            context.lineTo(point.x, point.y);
 	            context.stroke();
@@ -1976,5 +2059,5 @@ webpackJsonp([0,1],[
 
 	exports.lineHandler = lineHandler;
 
-/***/ }
+/***/ })
 ]);

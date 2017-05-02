@@ -1,14 +1,14 @@
 class singleButton{
 
 
-    constructor(context,x,y,r,id) {
+    constructor(context,x,y,r,id,uncover_color,cover_color) {
         this.context = context;
         this.x = x ;
         this.y = y ;
         this.r = r ;
         this.id = id ;
-        this.uncover_color = "#FFE1FF" ;
-        this.covered_color = "#98F5FF" ;
+        this.uncover_color = uncover_color ;
+        this.covered_color = cover_color ;
         this.toUncovered() ;
     }
 

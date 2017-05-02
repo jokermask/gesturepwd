@@ -1,18 +1,22 @@
 class lineHandler{
 
-    constructor(canvas,context){
+    constructor(canvas,context,color,width){
         this.linearquery = [] ;
         this.canvas = canvas ;
         this.context = context ;
+        this.color = color ;
+        this.line_width = width ;
         this.tempfixedX = null ;
         this.tempfixedY = null ;
     }
 
-    draw(point,color){
+    draw(point){
         let context = this.context ;
+        let color = this.color ;
+        let width = this.width ;
         context.beginPath();
         context.strokeStyle = color ;//设置填充颜色
-        context.lineWidth = 5;
+        context.lineWidth = this.width ;
         context.moveTo(this.tempfixedX,this.tempfixedY);
         context.lineTo(point.x,point.y);
         context.stroke();
